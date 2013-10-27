@@ -1,0 +1,61 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{algorithm2e}
+%opening
+\title{}
+\author{}
+
+\begin{document}
+
+%\maketitle
+\section{Background}
+The algorithm detects the use of a jammer that spoofs disconnect packets to the network resetting connections to the clients on a wi-fi network. The attack is documented here \href{http://hackaday.com/2011/10/04/wifi-jamming-via-deauthentication-packets/}{(video+ links from 2011)}. The data from two functions, \href{http://developer.android.com/reference/android/net/wifi/WifiInfo.html}{WifiInfo} class are used with a kalman filter to estimate the connectivity state and  alert the user.
+The fuctions:
+\begin{itemize}
+ \item \emph{\href{http://developer.android.com/reference/android/net/wifi/WifiInfo.html\#getSupplicantState()}{Supplicant State}} This function returns the connectivity state of the WiFi connection.
+ \item \emph{\href{http://developer.android.com/reference/android/net/wifi/WifiInfo.html\#getRssi()}{Signal strength}} Information about quality of the wifi connection to the accesspoint. The signal strength is the not normalised, so the kalman filter is reinitialised every time the app is restarted.
+\end{itemize}
+
+To model the wifi connection status using a kalman filter the numbers from the above functions are plugged into the kalman filter as follows,
+\[ x_k = Ax_{k-1} + Bu_k + w_{k} \]
+where,
+\begin{description}
+ \item [$x_k$] is the predicted connection status,
+ \item [$u_k$] is the control singal, as there is no control signal this is zero.
+ \item [$w_{k}$] the process noise, measured as the change in RSSI of the wifi signal.
+\end{description}
+and the equation for $z_k$ becomes:
+\[  z_k = x_{k} + v_{k} \]
+The kalman filter update equations now change as follows:
+\[ K_k= \frac{P^-_k}{P^-_k + R} \]
+\[ x_k = x^-_k + K_k (z_k - x^-_k) \]
+\[ P_k = (1 - K_k)P^-_k\]
+
+
+\section{Algorithm}
+\begin{algorithm}
+ \SetAlgoLined
+ \KwData{Supplicant State, Wifi Signal Strength}
+ \KwResult{Jammed or Not}
+ set $z_k =$  get RSSI value\;
+ set $x_{k-1}  = 0 $\;
+ set $P^-_{k-1} =1 $\;
+ set $P^-_k = P^-_{k-1} =1 $\;
+ set the standard deviation of the signal $R = 0$,  \;
+ \While{app is running}{
+  update $K_k$, $x_k$, $P_k$\;
+  \eIf{ (getRSSI value -  $x_k$) $<100$} {
+     \eIf{wifi connected?}{
+	loop\;
+      }{
+      alert user about possible jamming\;
+      }
+   }{
+   if not connected, signal strength too low\;
+   }
+ }
+\end{algorithm}
+
+
+\end{document}
