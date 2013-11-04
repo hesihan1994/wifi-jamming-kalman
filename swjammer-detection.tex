@@ -17,45 +17,115 @@ The fuctions:
  \item \emph{\href{http://developer.android.com/reference/android/net/wifi/WifiInfo.html\#getRssi()}{Signal strength}} Information about quality of the wifi connection to the accesspoint. The signal strength is the not normalised, so the kalman filter is reinitialised every time the app is restarted.
 \end{itemize}
 
-To model the wifi connection status using a kalman filter the numbers from the above functions are plugged into the kalman filter as follows,
-\[ x_k = Ax_{k-1} + Bu_k + w_{k} \]
+\section{How it works}
+The kalman filter is used to predict the value of the RSSI from an access point. If the value of the RSSI matches the prediction and the WiFi is not connected then the access point is possibly being jammed. There are three RSSI values in the kalman filter equations, $x_p$ the value predicted by the filter, $z_n$ the actual value and finally $x_{n-1}$ the RSSI value from the previous loop of the Kalman filter.
+
+Kalman equations:
+\[x_p = Ax_{n-1} + Bu_n \]
+\[P_p = AP_{n-1}A^T + Q \]
+\[\widetilde{y} = z_n - Hx_p \]
+\[S = HP_pH^T +R\]
+\[K = P_p H^TS^{-1} \]
+\[x_n = x_p+K\widetilde{y} \]
+\[P_n = (1-KH)P_p \]
+
 where,
 \begin{description}
- \item [$x_k$] is the predicted connection status,
- \item [$u_k$] is the control singal, as there is no control signal this is zero.
- \item [$w_{k}$] the process noise, measured as the change in RSSI of the wifi signal.
+ \item [$x_p$] is the predicted RSSI,
+ \item [$P_p$] is the predicted covariance,
+ \item [$z_n$] the current RSSI value
+ \item [$\widetilde{y}$], the difference between the predicted value and the actual value.
+ \item [$S$] is the standard deviation at that point in time,
+ \item [$K$] is the kalman gain,
+ \item [$x_n$] the next predicted value
+ \item [$P_n$] the next predicited co-variance value.
 \end{description}
-and the equation for $z_k$ becomes:
-\[  z_k = x_{k} + v_{k} \]
-The kalman filter update equations now change as follows:
-\[ K_k= \frac{P^-_k}{P^-_k + R} \]
-\[ x_k = x^-_k + K_k (z_k - x^-_k) \]
-\[ P_k = (1 - K_k)P^-_k\]
+To implement the filter, first the constants $A$, $B$, $H$ and $Q$ must be set. As the wifi signal that is being modelled is not very complex. The constants that are multipled in the above equations are set to 1 and the constant that is added is set to 0. So, $A = B = H = 1$ and $Q= 0$ 
+
+
+When implemented, the the equations become:\\
+$x_p = Ax_{n-1} + Bu_n $, as the user has no control over the wifi signal $u_n$ is zero at any given point in time. $x_p = x_{n-1}$\\
+$P_p = AP_{n-1}A^T + Q $, Replacing the constants from above, $P_p = P_{n-1}+ 0 $\\
+$\widetilde{y} = z_n - Hx_p $, replacing $H$, $\widetilde{y} = z_n - x_p $\\
+$S = HP_pH^T +R$, again replacing the constants, $S = P_p +R $\\
+$K = P_p H^TS^{-1} $, and the kalman gain will be, $K = P_p/S $\\
+$x_n = x_p+K\widetilde{y} $, the equation for predicting the next value does not change.\\
+$P_n = (1-KH)P_p$, the covariance update after replacing constants $P_n = (1-K)P_p$
 
 
 \section{Algorithm}
-\begin{algorithm}
+\begin{algorithm}[H]
  \SetAlgoLined
  \KwData{Supplicant State, Wifi Signal Strength}
  \KwResult{Jammed or Not}
- set $z_k =$  get RSSI value\;
- set $x_{k-1}  = 0 $\;
- set $P^-_{k-1} =1 $\;
- set $P^-_k = P^-_{k-1} =1 $\;
- set the standard deviation of the signal $R = 0$,  \;
- \While{app is running}{
-  update $K_k$, $x_k$, $P_k$\;
-  \eIf{ (getRSSI value -  $x_k$) $<100$} {
-     \eIf{wifi connected?}{
-	loop\;
+ set $x_{n-1}$= current RSSI\;
+ set $P_{n-1} =1 $\;
+ set the standard deviation of the RSSI to $R =0$,\;
+ set connection RSSI threshold $T$ to $x_{n-1}$\;
+ set RSSI mean, $RSSI_{mean} = x_{n-1}$\;
+ set number of RSSI samples to 1, $RSSI_{samples} =1 $\;
+ set RSSI standard deviation to 0, $RSSI_{sd} =0 $\;
+ \While{app running}{
+  $cRSSI$ = current RSSI\;
+  $RSSI_{samples} +=1$\;
+  $mean_{temp} = RSSI_{mean}$\;
+  $RSSI_{mean}+= (cRSSI - mean_{temp})/RSSI_{samples}$\;
+  $RSSI_{sd} += (cRSSI- mean_{temp})*(cRSSI - RSSI_{mean})$\;
+  $R = \sqrt{RSSI_{sd}/(RSSI_{samples} -1)} $\;
+  $K = P_p/(P_p+R)$\;
+  $x_p = x_{n-1} + K*(cRSSI-x_{n-1}) $\;
+  $P_p = (1-K)P_{n-1}$\;
+  \eIf{($(cRSSI - x_p) < 100$) and $cRSSI <T$ } {
+     \eIf{Wifi connected?}{
+	$T = cRSSI$\;
       }{
-      alert user about possible jamming\;
+        Wifi is being jammed\;
       }
    }{
-   if not connected, signal strength too low\;
+   signal strength too low to detect jamming\;
    }
+   $x_{n-1} = x_{p}$\;
+   $P_{n-1} = P_p$
  }
 \end{algorithm}
 
-
+\section{matlab program}
+clear;\\
+double cRSSI = readRSSI(); \\
+double RSSIt = cRSSI;
+double xnm1 = cRSSI;\\
+double Pnm1 = 1; \\
+double xp =0;\\
+double Pp =1;\\
+double R = 0;\\
+double k = 0;\\
+double T = cRSSI;\\
+double RSSItemp = 0;\\
+double RSSIm = cRSSI;\\
+double RSSIsd = 0;\\
+double RSSIcount = 1;\\
+int exitLoop =1;\\
+while exitLoop\\
+\indent  cRSSI = readRSSI();\\
+\indent  RSSItemp = RSSIm;\\
+\indent  RSSIcount = RSSIcount + 1;\\
+\indent  RSSIm = RSSIm + ((cRSSI - RSSItemp)/RSSIcount);\\
+\indent  RSSIsd = RSSIsd +  ((cRSSI- RSSItemp)*(cRSSI - RSSIm));\\
+\indent  R = sqrt(RSSIsd/ (RSSIcount - 1));\\
+\indent  k = Pp / (Pp+R);\\
+\indent  xp = (xnm1-1) + K*(cRSSI-xnm1);\\
+\indent  Pp = (1-K)*Pnm1;\\
+\indent  if (cRSSI - xp) $<$ 100 and (RSSIt$<$ cRSSI)\\
+\indent  then \\
+\indent \indent if (wifi not connected) \\
+\indent \indent then \\
+\indent \indent \indent ``jammed'';\\
+\indent \indent else \\
+\indent \indent \indent ``not jammed''; \\
+\indent \indent end\_if;\\
+\indent  end\_if;\\
+\indent  if ``key is pressed''\\
+\indent\indent    exitLoop = 0;\\
+\indent  end\_if\\
+end; 
 \end{document}
