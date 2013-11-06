@@ -19,26 +19,6 @@ public class StartScreen extends Activity {
 	 * http://bilgin.esme.org/BitsBytes/KalmanFilterforDummies.aspx
 	 */
 	
-	// Known lowest connection threshold
-	private double RSSIThreshold = 0;
-	private double maxChange = 100;
-
-	// Kalman filter stuff
-	// inputs
-	private double RSSI_Un = 0, //user has no control over RSSI values
-			RSSI_zk =0, //current RSSI value
-			RSSI_x_hat =0, //  Current predicted RSSI value
-			RSSI_x_hat_m1 = 0, // previous predicted RSSI val
-			RSSI_Pk_mk =0, // Process error
-			RSSI_R = 0, // RSSI variance
-			RSSI_Kk =0 ;
-	
-	// RSSI distribution stuff
-	private float RSSIsd = 0;
-	private double RSSImean = 0;
-	private double numSamples = 0;
-	
-	
 	private WifiManager appWifi = null;
 	// Not connected to wifi handler 
 	Handler buttonLoop = new Handler();
@@ -62,14 +42,6 @@ public class StartScreen extends Activity {
 	Runnable kalmanRun = new Runnable () {
 		@Override
 		public void run(){
-			WifiInfo current = appWifi.getConnectionInfo();
-			RSSI_zk =current.getRssi();
-			calculateRunningSd();
-			RSSI_Kk = (RSSI_Pk_mk/(RSSI_Pk_mk+RSSI_R));
-			RSSI_x_hat = RSSI_x_hat_m1+ RSSI_Kk*(RSSI_zk-RSSI_x_hat_m1);
-			RSSI_Pk_mk = (1-RSSI_Kk)*RSSI_Pk_mk;
-			checkConnectionStatus();
-			RSSI_x_hat_m1 = RSSI_x_hat; 
 			
 			//change this to sample with every beacon
 			kalmanLooper.postDelayed(this, 200);
@@ -98,10 +70,6 @@ public class StartScreen extends Activity {
 			if (WifiInfo.getDetailedStateOf(wi.getSupplicantState())== NetworkInfo.DetailedState.CONNECTED){
 				tButton.setText("Stop Sampling");
 				appWifi = wifiManage;
-				RSSIThreshold = wi.getRssi();
-				RSSImean = RSSIThreshold;
-				RSSI_zk = RSSImean; 
-				numSamples = 1;
 		       	kalmanLooper.postDelayed(kalmanRun, 200);
 			}
 			else {
@@ -112,26 +80,12 @@ public class StartScreen extends Activity {
 		}
 		else{
 			tButton.setText("Start Sampling");
-			RSSI_zk =0; //current RSSI value
-			RSSI_x_hat =0; //  Current predicted RSSI value
-			RSSI_x_hat_m1 = 0; // previous predicted RSSI val
-			RSSI_Pk_mk =0; // Process error
-			RSSI_R = 0; // RSSI variance
-			RSSI_Kk =0;
-			numSamples =0;
-			RSSIThreshold =0;
-			RSSImean = 0;
 			kalmanLooper.removeCallbacks(kalmanRun);
 		}
 		
 	}
 	
 	private void calculateRunningSd(){
-		 numSamples++;
-		 double tmpM = RSSImean;
-		 RSSImean+= (RSSI_zk - tmpM)/numSamples;
-		 RSSIsd += (RSSI_zk - tmpM)* (RSSI_zk* RSSImean);
-		 RSSI_R = Math.sqrt(RSSIsd/ (numSamples-1)); 
 		/* Stack exchange example: http://stackoverflow.com/questions/895929/
 		 * how-do-i-determine-the-standard-deviation-stddev-of-a-set-of-values
 		 * double tmpM = M;
@@ -145,10 +99,7 @@ public class StartScreen extends Activity {
 	private void checkConnectionStatus(){
 		WifiInfo wi = appWifi.getConnectionInfo();
 		TextView warn_text= (TextView) findViewById(R.id.textView1);
-		if (((RSSI_x_hat- RSSI_zk) >  RSSIThreshold )){  
-				if (WifiInfo.getDetailedStateOf(wi.getSupplicantState())== NetworkInfo.DetailedState.CONNECTED)
-					RSSIThreshold =  RSSI_zk;
-				warn_text.setText("Not Jammed");
+
 		}
 		else{
 			if (WifiInfo.getDetailedStateOf(wi.getSupplicantState())!= NetworkInfo.DetailedState.CONNECTED){
