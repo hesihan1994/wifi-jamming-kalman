@@ -3,6 +3,7 @@
 
     <string name="app_name">Detect Wifi Jammer</string>
     <string name="action_settings">Settings</string>
-    <string name="hello_world">Not Jammed</string>
-    <string name="button_label">Start Sampling</string>
+    <string name="defaultStatus">Not Jammed</string>
+    <string name="buttonStartStopLabel">Start Sampling</string>
+    <string name="defaultThreshold">Default Threshold:150</string>
 </resources>

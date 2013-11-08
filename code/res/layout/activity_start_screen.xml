@@ -8,19 +8,25 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".StartScreen" >
-
+    
     <TextView
-        android:id="@+id/textView1"
+        android:id="@+id/displayThreshold"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:text="@string/defaultThreshold" />
+    
+    <TextView
+        android:id="@+id/displayStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/defaultStatus" />
 
     <Button
-        android:id="@+id/buttonBtest"
+        android:id="@+id/buttonStartStop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="112dp"
-        android:text="@string/button_label"
+        android:text="@string/buttonStartStopLabel"
         android:onClick="startStop" />
 
 </LinearLayout>
