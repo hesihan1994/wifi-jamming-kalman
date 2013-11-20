@@ -8,25 +8,76 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".StartScreen" >
-    
-    <TextView
-        android:id="@+id/displayThreshold"
+        <!--Status display -->
+    <LinearLayout
         android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        <TextView
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="@string/defaultThreshold" />
-    
-    <TextView
+        android:text="@string/currentStatus" 
+        android:layout_weight="1"    />
+        <TextView
         android:id="@+id/displayStatus"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="@string/defaultStatus" />
+        android:text="@string/defaultStatus" 
+        android:layout_weight="1"    />
+    </LinearLayout>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/currentNetwork" 
+        android:layout_weight="1"    />
+        <TextView
+        android:id="@+id/displayNetwork"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"    />
+    </LinearLayout>
 
     <Button
         android:id="@+id/buttonStartStop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="112dp"
+        android:layout_marginBottom="15dp"
         android:text="@string/buttonStartStopLabel"
         android:onClick="startStop" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/defaultThreshold" />
+        <TextView
+        android:id="@+id/displayThreshold"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/defaultThresholdValue" />
+    </LinearLayout>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/defaultCusumThreshold" />
+        <TextView
+        android:id="@+id/displayCusumThreshold"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/defaultCusumThresholdValue" />
+    </LinearLayout>
 
 </LinearLayout>

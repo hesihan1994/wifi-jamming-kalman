@@ -16,10 +16,18 @@ public class StartScreen extends Activity {
 		@Override
 		public void handleMessage(Message msg) {
 			String recievedString = msg.obj.toString();
+			boolean notHandled = true;
 			if (recievedString.equals("Jammed") || recievedString.equals("Not Jammed")){
 				updateDisplayMessage(recievedString);
+				notHandled = false;
 			}
-			else {
+			
+			if (recievedString.equals("changedNetwork")){
+				setNetworkName();
+				notHandled = false;
+			}
+			
+			if (notHandled) {
 				super.handleMessage(msg);
 			}
 		}
@@ -54,7 +62,8 @@ public class StartScreen extends Activity {
 			if (kalmanInterface.isWifiConnected(this.getApplicationContext())){
 				kalmanInterface.startTesting(getThreshold(),mainLoop);
 				startStop.setText("Stop Sampling");
-		       	mainLoop.postDelayed(kalmanInterface, 200);
+				setNetworkName();
+				mainLoop.postDelayed(kalmanInterface, 200);
 			}
 			else {
 				startStop.setText("Wifi Network not connected");
@@ -70,11 +79,9 @@ public class StartScreen extends Activity {
 	
 	private int getThreshold(){
 		TextView detectionThreshold = (TextView) findViewById(R.id.displayThreshold);
-		String defaultThresholdText = getResources().getString(R.string.defaultThreshold);
 		String currentThresholdText = detectionThreshold.getText().toString();
-		if (!currentThresholdText.equals(defaultThresholdText)){
+		if (Integer.parseInt(currentThresholdText)> 0)
 			return Integer.parseInt(currentThresholdText);
-		}
 		return 150;
 	}
 	
@@ -82,4 +89,11 @@ public class StartScreen extends Activity {
 		TextView alertText = (TextView) findViewById(R.id.displayStatus);
 		alertText.setText(recievedString);
 	}
+	
+	private void setNetworkName(){
+		TextView networkText = (TextView) findViewById(R.id.displayNetwork);
+		networkText.setText(kalmanInterface.wifiNetworkName());
+	}
+	
+	
 }

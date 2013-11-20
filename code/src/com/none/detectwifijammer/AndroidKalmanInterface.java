@@ -16,8 +16,10 @@ public class AndroidKalmanInterface implements Runnable {
 	private WifiInfo deviceWifiInfo;
 	
 	private WifiKalmanFilter theFilter;
+	private WifiCusum theStateMachine;
 	
 	private String currentMessage ="Not Jammed";
+	private String changedNetwork = "Changing";
 	
 	private int detectionThreshold;
 	private float estimatedRssi;
@@ -31,8 +33,13 @@ public class AndroidKalmanInterface implements Runnable {
 		return false;
 	}
 	
+	public String wifiNetworkName(){
+		return deviceWifiInfo.getSSID();
+	}
+	
 	public void startTesting(int theThreshold, Handler callbackFunction){
 		theFilter.clearFilter();
+		theStateMachine.initialiseCusum();
 		detectionThreshold = theThreshold;
 		alertUser = callbackFunction;
 		theFilter.initialiseFilter(60, getRssi());
@@ -46,9 +53,12 @@ public class AndroidKalmanInterface implements Runnable {
 	@Override
 	public void run() {
 		float currentRssi = getRssi();
+		boolean wifiCanBeJammed = false;
 		if ((currentRssi - estimatedRssi) < detectionThreshold){
 			checkStatusandAlert();
+			wifiCanBeJammed = true;
 		}
+		updateCusum(wifiCanBeJammed);
 		estimatedRssi = theFilter.updateFilter(currentRssi);
 	}
 	
@@ -82,6 +92,23 @@ public class AndroidKalmanInterface implements Runnable {
 				changeMessage.setTarget(alertUser);
 				changeMessage.notify();
 			}
+		}
+		
+	}
+	
+	private void updateCusum(boolean wifiCanBeJammed){
+		int updateValue = 0;
+		if (changedNetwork.equals("changedNetwork")){
+			changedNetwork = "changing";
+		}
+		if (wifiCanBeJammed && !isWifiConnected())
+			updateValue = 1;
+		if (theStateMachine.updateCusum(updateValue)){
+			changedNetwork = "changedNetwork";
+			Message changeMessage = new Message();
+			changeMessage.obj = changedNetwork;
+			changeMessage.setTarget(alertUser);
+			changeMessage.notify();
 		}
 	}
 }

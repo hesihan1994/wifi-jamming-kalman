@@ -4,6 +4,14 @@
     <string name="app_name">Detect Wifi Jammer</string>
     <string name="action_settings">Settings</string>
     <string name="defaultStatus">Not Jammed</string>
+    <string name="currentStatus">Status</string>
+    
+    <string name="currentNetwork">Current Network</string>
+    
     <string name="buttonStartStopLabel">Start Sampling</string>
-    <string name="defaultThreshold">Default Threshold:150</string>
+    <string name="defaultThresholdValue">150</string>
+    <string name="defaultCusumThresholdValue">3</string>
+    
+    <string name="defaultThreshold">Kalman Threshold</string>
+    <string name="defaultCusumThreshold">Kalman Threshold</string>
 </resources>
